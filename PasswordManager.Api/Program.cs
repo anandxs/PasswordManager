@@ -65,6 +65,48 @@ app.MapIdentityApi<IdentityUser>();
 app.UseHttpsRedirection();
 app.UseCors("DefaultPolicy");
 
+app.MapGet("/passwords", (ApplicationDbContext db, ClaimsPrincipal user) =>
+{
+    ClaimsIdentity claimsIdentity = (ClaimsIdentity)user.Identity!;
+    var id = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    var passwords = db.UserPasswords?.Where(p => p.UserId.Equals(id));
+    return Results.Ok(passwords);
+})
+.WithOpenApi()
+.RequireAuthorization();
+
+app.MapPost("/passwords", (ApplicationDbContext db, ClaimsPrincipal user, string encryptedPassword) =>
+{
+    ClaimsIdentity claimsIdentity = (ClaimsIdentity)user.Identity!;
+    var id = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    var entity = new UserPassword
+    {
+        EncrptedPassword = encryptedPassword,
+        UserId = id,
+    };
+    db.UserPasswords.Add(entity);
+    db.SaveChanges();
+
+    return Results.NoContent();
+})
+.WithOpenApi()
+.RequireAuthorization();
+
+app.MapDelete("/passwords", (ApplicationDbContext db, ClaimsPrincipal user, int passwordId) =>
+{
+    ClaimsIdentity claimsIdentity = (ClaimsIdentity)user.Identity!;
+    var id = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    var entity = db.UserPasswords.FirstOrDefault(x => x.Id == passwordId);
+    if (entity is null) return Results.NoContent();
+    db.UserPasswords.Remove(entity);
+    db.SaveChanges();
+    return Results.NoContent();
+})
+.WithOpenApi()
+.RequireAuthorization();
+
 app.MapPost("/logout", async (SignInManager<IdentityUser> signInManager, [FromBody] object empty) =>
 {
     if (empty != null)
