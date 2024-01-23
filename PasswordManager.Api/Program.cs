@@ -83,9 +83,9 @@ app.MapPost("/passwords", (ApplicationDbContext db, ClaimsPrincipal user, string
     var entity = new UserPassword
     {
         EncrptedPassword = encryptedPassword,
-        UserId = id,
+        UserId = id!,
     };
-    db.UserPasswords.Add(entity);
+    db.UserPasswords!.Add(entity);
     db.SaveChanges();
 
     return Results.NoContent();
@@ -98,9 +98,9 @@ app.MapDelete("/passwords", (ApplicationDbContext db, ClaimsPrincipal user, int 
     ClaimsIdentity claimsIdentity = (ClaimsIdentity)user.Identity!;
     var id = claimsIdentity?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    var entity = db.UserPasswords.FirstOrDefault(x => x.Id == passwordId);
+    var entity = db.UserPasswords!.FirstOrDefault(x => x.Id == passwordId);
     if (entity is null) return Results.NoContent();
-    db.UserPasswords.Remove(entity);
+    db.UserPasswords!.Remove(entity);
     db.SaveChanges();
     return Results.NoContent();
 })
